@@ -1,0 +1,45 @@
+name: build-apk
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Scaffold android project (keep our lib + pubspec)
+        run: |
+          cp lib/main.dart /tmp/main.dart
+          cp pubspec.yaml /tmp/pubspec.yaml
+          flutter create --platforms=android --org xyz.peterai --project-name cleaner_android .
+          cp /tmp/main.dart lib/main.dart
+          cp /tmp/pubspec.yaml pubspec.yaml
+      - name: Inject photo permissions
+        run: |
+          python3 - <<'PY'
+          import re
+          p="android/app/src/main/AndroidManifest.xml"; s=open(p).read()
+          perms=('    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>\n'
+                 '    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>\n'
+                 '    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>\n'
+                 '    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION"/>\n')
+          if "READ_MEDIA_IMAGES" not in s: s=re.sub(r'(<application)', perms+r'\1', s, count=1)
+          open(p,"w").write(s); print("patched")
+          PY
+      - name: Build APK
+        run: |
+          flutter pub get
+          flutter build apk --release
+      - run: cp build/app/outputs/flutter-apk/app-release.apk cleaner-android-0.1.0.apk
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.0
+          name: 手機清理器 (Android) v0.1.0
+          body: "Android 側載版。設定允許安裝未知來源、相簿權限按允許。本機運作、不上傳資料。"
+          files: cleaner-android-0.1.0.apk
