@@ -1,0 +1,19 @@
+name: cleaner_android
+description: 手機清理器 — 相似/重複照片、大影片，刪到垃圾桶
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  photo_manager: ^3.6.0
+  image: ^4.2.0
+
+dev_dependencies:
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
